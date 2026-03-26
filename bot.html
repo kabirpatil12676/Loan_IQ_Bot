@@ -207,6 +207,7 @@ input.addEventListener('keydown', e => {
 
 /* ══ RENDER UI ══ */
 function botMsg(text, chips = [], resultData = null) {
+  lastBotText = text;
   const row = document.createElement('div');
   row.className = 'msg-row bot';
 
@@ -306,23 +307,29 @@ function setStep(n) {
 }
 
 /* ══ INPUT VALIDATION ══ */
+let lastBotText = '';
+
 function validateInput(text) {
   const num = parseFloat(text);
   if (isNaN(num)) return null; // not a number, let Dialogflow handle it
 
-  const rules = {
-    1: { min: 18, max: 100, label: 'Age', unit: 'years (18–100)' },
-    4: { min: 300, max: 900, label: 'Credit score', unit: '(valid range: 300–900)' },
-    5: { min: 1, max: 500000000, label: 'Loan amount', unit: '(must be greater than 0)' },
-    6: { min: 0, max: 10000000, label: 'Existing EMI', unit: '(cannot be negative)' },
-    8: { min: 0, max: 10, label: 'Dependents', unit: '(0–10)' },
-  };
+  const lo = lastBotText.toLowerCase();
 
-  const rule = rules[stepNum];
-  if (!rule) return null;
+  const rules = [
+    { keys: ['how old','age','years old'],      min: 18,  max: 100,       label: 'Age',          unit: 'years (18–100)' },
+    { keys: ['credit','cibil'],                  min: 300, max: 900,       label: 'Credit score', unit: '(valid range: 300–900)' },
+    { keys: ['loan amount','how much','borrow'], min: 1,   max: 500000000, label: 'Loan amount',  unit: '(must be greater than 0)' },
+    { keys: ['existing emi','current emi'],      min: 0,   max: 10000000,  label: 'Existing EMI', unit: '(cannot be negative)' },
+    { keys: ['dependent','children'],            min: 0,   max: 10,        label: 'Dependents',   unit: '(0–10)' },
+  ];
 
-  if (num < rule.min || num > rule.max) {
-    return `⚠️ ${rule.label} of ${text} seems invalid ${rule.unit}. Please enter a valid number.`;
+  for (const rule of rules) {
+    if (rule.keys.some(k => lo.includes(k))) {
+      if (num < rule.min || num > rule.max) {
+        return `⚠️ ${rule.label} of ${text} seems invalid ${rule.unit}. Please enter a valid number.`;
+      }
+      return null;
+    }
   }
   return null;
 }
