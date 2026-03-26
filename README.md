@@ -66,5 +66,5 @@ Based on the total sum, the engine outputs one of 5 verdicts ranging from **"Str
 
 *This project was developed to demonstrate full-stack engineering capabilities, UI/UX design, algorithmic problem solving, and third-party API integration.*
 
-- Find me on [LinkedIn](#) *(Replace with your URL)*
-- Check out my other projects on [GitHub](#) *(Replace with your URL)*
+- Find me on [LinkedIn](https://www.linkedin.com/in/kabir-patil-7a2a9b30b/)
+- Check out my other projects on [GitHub](https://github.com/kabirpatil12676)
