@@ -1,0 +1,1036 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>LoanIQ — AI Loan Eligibility Checker</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700;900&family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <!-- Dialogflow scripts only on bot.html -->
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --navy:   #0a0f1e;
+      --navy2:  #111827;
+      --navy3:  #1a2540;
+      --gold:   #c9a84c;
+      --gold2:  #e8c97a;
+      --gold3:  #f5e0a0;
+      --cream:  #fdf8f0;
+      --white:  #ffffff;
+      --muted:  #8b93a8;
+      --border: rgba(201,168,76,0.18);
+      --glow:   rgba(201,168,76,0.12);
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: var(--navy);
+      color: var(--white);
+      overflow-x: hidden;
+    }
+
+    /* ── NOISE TEXTURE OVERLAY ── */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+      pointer-events: none;
+      z-index: 0;
+      opacity: 0.6;
+    }
+
+    /* ── ANIMATED BACKGROUND ORBS ── */
+    .bg-orbs {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 0;
+      overflow: hidden;
+    }
+    .orb {
+      position: absolute;
+      border-radius: 50%;
+      filter: blur(80px);
+      opacity: 0.15;
+      animation: drift 18s ease-in-out infinite;
+    }
+    .orb-1 { width: 600px; height: 600px; background: var(--gold); top: -200px; right: -150px; animation-delay: 0s; }
+    .orb-2 { width: 400px; height: 400px; background: #2563eb; bottom: 100px; left: -100px; animation-delay: -6s; }
+    .orb-3 { width: 300px; height: 300px; background: var(--gold2); top: 50%; left: 40%; animation-delay: -12s; }
+
+    @keyframes drift {
+      0%, 100% { transform: translate(0, 0) scale(1); }
+      33% { transform: translate(30px, -40px) scale(1.05); }
+      66% { transform: translate(-20px, 20px) scale(0.95); }
+    }
+
+    /* ── NAV ── */
+    nav {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      z-index: 100;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 20px 48px;
+      background: rgba(10,15,30,0.7);
+      backdrop-filter: blur(20px);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .nav-logo {
+      font-family: 'Playfair Display', serif;
+      font-size: 22px;
+      font-weight: 700;
+      color: var(--white);
+      letter-spacing: -0.5px;
+    }
+    .nav-logo span { color: var(--gold); }
+
+    .nav-links { display: flex; gap: 32px; align-items: center; }
+    .nav-links a {
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--muted);
+      text-decoration: none;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+      transition: color 0.2s;
+    }
+    .nav-links a:hover { color: var(--gold); }
+
+    .nav-cta {
+      background: var(--gold);
+      color: var(--navy) !important;
+      padding: 9px 22px;
+      border-radius: 6px;
+      font-weight: 600 !important;
+      transition: background 0.2s, transform 0.15s !important;
+    }
+    .nav-cta:hover { background: var(--gold2) !important; transform: translateY(-1px); }
+
+    /* ── HERO ── */
+    .hero {
+      position: relative;
+      z-index: 1;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      padding: 120px 48px 80px;
+      max-width: 1200px;
+      margin: 0 auto;
+      gap: 60px;
+    }
+
+    .hero-left { flex: 1; }
+
+    .hero-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(201,168,76,0.1);
+      border: 1px solid var(--border);
+      border-radius: 100px;
+      padding: 6px 16px 6px 8px;
+      margin-bottom: 32px;
+      animation: fadeUp 0.8s ease both;
+    }
+    .badge-dot {
+      width: 8px; height: 8px;
+      background: #22c55e;
+      border-radius: 50%;
+      box-shadow: 0 0 8px #22c55e;
+      animation: pulse-dot 2s ease-in-out infinite;
+    }
+    @keyframes pulse-dot {
+      0%,100% { box-shadow: 0 0 6px #22c55e; }
+      50% { box-shadow: 0 0 14px #22c55e, 0 0 24px rgba(34,197,94,0.4); }
+    }
+    .hero-badge span { font-size: 12px; font-weight: 500; color: var(--gold2); letter-spacing: 0.5px; }
+
+    .hero-title {
+      font-family: 'Playfair Display', serif;
+      font-size: clamp(42px, 5.5vw, 76px);
+      font-weight: 900;
+      line-height: 1.05;
+      letter-spacing: -2px;
+      margin-bottom: 24px;
+      animation: fadeUp 0.8s 0.1s ease both;
+    }
+    .hero-title .line2 { color: var(--gold); display: block; }
+
+    .hero-subtitle {
+      font-size: 17px;
+      color: var(--muted);
+      line-height: 1.7;
+      max-width: 480px;
+      margin-bottom: 40px;
+      font-weight: 300;
+      animation: fadeUp 0.8s 0.2s ease both;
+    }
+
+    .hero-actions {
+      display: flex;
+      gap: 16px;
+      align-items: center;
+      flex-wrap: wrap;
+      animation: fadeUp 0.8s 0.3s ease both;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, var(--gold), var(--gold2));
+      color: var(--navy);
+      border: none;
+      padding: 14px 32px;
+      border-radius: 8px;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: transform 0.2s, box-shadow 0.2s;
+      box-shadow: 0 4px 24px rgba(201,168,76,0.3);
+      text-decoration: none;
+      display: inline-block;
+    }
+    .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 8px 32px rgba(201,168,76,0.4); }
+
+    .btn-ghost {
+      background: transparent;
+      color: var(--muted);
+      border: 1px solid rgba(139,147,168,0.3);
+      padding: 14px 28px;
+      border-radius: 8px;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 15px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: color 0.2s, border-color 0.2s;
+      text-decoration: none;
+      display: inline-block;
+    }
+    .btn-ghost:hover { color: var(--white); border-color: var(--gold); }
+
+    .hero-stats {
+      display: flex;
+      gap: 40px;
+      margin-top: 56px;
+      padding-top: 40px;
+      border-top: 1px solid var(--border);
+      animation: fadeUp 0.8s 0.4s ease both;
+    }
+    .stat-item { }
+    .stat-number {
+      font-family: 'Playfair Display', serif;
+      font-size: 32px;
+      font-weight: 700;
+      color: var(--gold);
+      display: block;
+    }
+    .stat-label { font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.8px; margin-top: 2px; }
+
+    /* ── CHAT PREVIEW CARD ── */
+    .hero-right {
+      flex: 0 0 420px;
+      animation: fadeUp 0.8s 0.2s ease both;
+    }
+
+    .chat-card {
+      background: var(--navy3);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      overflow: hidden;
+      box-shadow: 0 32px 80px rgba(0,0,0,0.5), 0 0 0 1px rgba(201,168,76,0.05);
+    }
+
+    .chat-header {
+      background: linear-gradient(135deg, var(--navy2), var(--navy3));
+      padding: 20px 24px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .chat-avatar {
+      width: 42px; height: 42px;
+      background: linear-gradient(135deg, var(--gold), var(--gold2));
+      border-radius: 12px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 20px;
+      flex-shrink: 0;
+    }
+
+    .chat-header-info { flex: 1; }
+    .chat-header-name { font-weight: 600; font-size: 15px; }
+    .chat-header-status { font-size: 12px; color: #22c55e; display: flex; align-items: center; gap: 5px; margin-top: 2px; }
+    .chat-header-status::before { content:''; width:6px;height:6px;background:#22c55e;border-radius:50%; }
+
+    .chat-messages { padding: 20px; display: flex; flex-direction: column; gap: 12px; min-height: 280px; }
+
+    .msg { display: flex; gap: 10px; align-items: flex-end; }
+    .msg.user { flex-direction: row-reverse; }
+
+    .msg-bubble {
+      max-width: 75%;
+      padding: 12px 16px;
+      border-radius: 16px;
+      font-size: 13.5px;
+      line-height: 1.5;
+    }
+    .msg.bot .msg-bubble {
+      background: var(--navy2);
+      border: 1px solid var(--border);
+      border-bottom-left-radius: 4px;
+      color: var(--white);
+    }
+    .msg.user .msg-bubble {
+      background: linear-gradient(135deg, var(--gold), #b8913e);
+      color: var(--navy);
+      font-weight: 500;
+      border-bottom-right-radius: 4px;
+    }
+
+    .msg-icon {
+      width: 28px; height: 28px;
+      border-radius: 8px;
+      background: linear-gradient(135deg, var(--gold), var(--gold2));
+      display: flex; align-items: center; justify-content: center;
+      font-size: 14px;
+      flex-shrink: 0;
+    }
+
+    .result-card {
+      background: linear-gradient(135deg, rgba(201,168,76,0.15), rgba(201,168,76,0.05));
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 14px 16px;
+      margin-top: 4px;
+    }
+    .result-score { font-family: 'Playfair Display', serif; font-size: 28px; font-weight: 700; color: var(--gold); }
+    .result-label { font-size: 12px; color: var(--muted); margin-top: 2px; }
+    .result-bar-bg { height: 6px; background: rgba(255,255,255,0.1); border-radius: 3px; margin-top: 10px; }
+    .result-bar-fill { height: 100%; width: 78%; background: linear-gradient(90deg, var(--gold), var(--gold2)); border-radius: 3px; }
+    .result-verdict { font-size: 12px; color: #22c55e; font-weight: 500; margin-top: 8px; }
+
+    .typing { display: flex; gap: 4px; align-items: center; padding: 10px 14px; }
+    .typing span { width: 7px; height: 7px; background: var(--muted); border-radius: 50%; animation: blink 1.2s ease-in-out infinite; }
+    .typing span:nth-child(2) { animation-delay: 0.2s; }
+    .typing span:nth-child(3) { animation-delay: 0.4s; }
+    @keyframes blink { 0%,80%,100%{opacity:0.2} 40%{opacity:1} }
+
+    /* ── HOW IT WORKS ── */
+    .section {
+      position: relative; z-index: 1;
+      padding: 100px 48px;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    .section-tag {
+      font-family: 'DM Mono', monospace;
+      font-size: 11px;
+      color: var(--gold);
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      margin-bottom: 16px;
+      display: block;
+    }
+
+    .section-title {
+      font-family: 'Playfair Display', serif;
+      font-size: clamp(32px, 3.5vw, 52px);
+      font-weight: 700;
+      letter-spacing: -1.5px;
+      line-height: 1.1;
+      margin-bottom: 16px;
+    }
+
+    .section-sub {
+      font-size: 16px;
+      color: var(--muted);
+      max-width: 500px;
+      line-height: 1.7;
+      margin-bottom: 64px;
+      font-weight: 300;
+    }
+
+    /* steps */
+    .steps-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 24px;
+    }
+
+    .step-card {
+      background: var(--navy3);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 32px 28px;
+      position: relative;
+      overflow: hidden;
+      transition: transform 0.3s, border-color 0.3s, box-shadow 0.3s;
+    }
+    .step-card::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(135deg, rgba(201,168,76,0.06), transparent);
+      opacity: 0;
+      transition: opacity 0.3s;
+    }
+    .step-card:hover { transform: translateY(-4px); border-color: rgba(201,168,76,0.4); box-shadow: 0 16px 40px rgba(0,0,0,0.3); }
+    .step-card:hover::before { opacity: 1; }
+
+    .step-number {
+      font-family: 'Playfair Display', serif;
+      font-size: 48px;
+      font-weight: 900;
+      color: rgba(201,168,76,0.15);
+      line-height: 1;
+      margin-bottom: 20px;
+    }
+    .step-icon { font-size: 28px; margin-bottom: 16px; display: block; }
+    .step-title { font-size: 16px; font-weight: 600; margin-bottom: 10px; }
+    .step-desc { font-size: 14px; color: var(--muted); line-height: 1.6; font-weight: 300; }
+
+    /* ── SCORING BREAKDOWN ── */
+    .scoring-section {
+      position: relative; z-index: 1;
+      background: var(--navy3);
+      border-top: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+      padding: 100px 48px;
+    }
+
+    .scoring-inner {
+      max-width: 1200px;
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 80px;
+      align-items: center;
+    }
+
+    .scoring-factors { display: flex; flex-direction: column; gap: 16px; }
+
+    .factor-row {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      padding: 16px 20px;
+      background: var(--navy);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      transition: border-color 0.2s;
+    }
+    .factor-row:hover { border-color: rgba(201,168,76,0.4); }
+
+    .factor-icon { font-size: 20px; width: 40px; text-align: center; }
+    .factor-info { flex: 1; }
+    .factor-name { font-size: 14px; font-weight: 500; }
+    .factor-desc { font-size: 12px; color: var(--muted); margin-top: 2px; }
+    .factor-weight {
+      font-family: 'DM Mono', monospace;
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--gold);
+      background: rgba(201,168,76,0.1);
+      padding: 4px 10px;
+      border-radius: 6px;
+    }
+
+    .factor-bar-wrap { width: 80px; }
+    .factor-bar-bg { height: 4px; background: rgba(255,255,255,0.08); border-radius: 2px; }
+    .factor-bar-fill { height: 100%; background: linear-gradient(90deg, var(--gold), var(--gold2)); border-radius: 2px; transition: width 1s ease; }
+
+    /* verdict table */
+    .verdict-table { display: flex; flex-direction: column; gap: 12px; }
+
+    .verdict-row {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      padding: 14px 20px;
+      border-radius: 10px;
+      border: 1px solid transparent;
+    }
+    .verdict-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+    .verdict-range { font-family: 'DM Mono', monospace; font-size: 12px; color: var(--muted); width: 70px; }
+    .verdict-label { font-size: 14px; font-weight: 500; flex: 1; }
+    .v-green  { background: rgba(34,197,94,0.06);  border-color: rgba(34,197,94,0.15);  }
+    .v-green .verdict-dot  { background: #22c55e; }
+    .v-yellow { background: rgba(234,179,8,0.06);  border-color: rgba(234,179,8,0.15);  }
+    .v-yellow .verdict-dot { background: #eab308; }
+    .v-orange { background: rgba(249,115,22,0.06); border-color: rgba(249,115,22,0.15); }
+    .v-orange .verdict-dot { background: #f97316; }
+    .v-red    { background: rgba(239,68,68,0.06);  border-color: rgba(239,68,68,0.15);  }
+    .v-red .verdict-dot    { background: #ef4444; }
+    .v-dark   { background: rgba(139,147,168,0.06); border-color: rgba(139,147,168,0.15); }
+    .v-dark .verdict-dot   { background: var(--muted); }
+
+    /* ── FEATURES ── */
+    .features-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 20px;
+    }
+
+    .feat-card {
+      background: var(--navy3);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 28px;
+      transition: transform 0.3s, border-color 0.3s;
+    }
+    .feat-card:hover { transform: translateY(-3px); border-color: rgba(201,168,76,0.3); }
+    .feat-card.wide { grid-column: span 2; }
+
+    .feat-icon {
+      width: 48px; height: 48px;
+      background: rgba(201,168,76,0.1);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 22px;
+      margin-bottom: 20px;
+    }
+    .feat-title { font-size: 17px; font-weight: 600; margin-bottom: 10px; }
+    .feat-desc { font-size: 14px; color: var(--muted); line-height: 1.65; font-weight: 300; }
+
+    /* ── TECH STACK ── */
+    .tech-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 14px;
+      margin-top: 48px;
+    }
+    .tech-pill {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: var(--navy3);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 10px 18px;
+      font-size: 13px;
+      font-weight: 500;
+      transition: border-color 0.2s, background 0.2s;
+    }
+    .tech-pill:hover { border-color: var(--gold); background: rgba(201,168,76,0.05); }
+    .tech-pill .dot { width: 7px; height: 7px; border-radius: 50%; }
+
+    /* ── BOT SECTION ── */
+    .bot-section {
+      position: relative; z-index: 1;
+      padding: 100px 48px 120px;
+      max-width: 900px;
+      margin: 0 auto;
+    }
+
+    .bot-wrapper {
+      background: var(--navy3);
+      border: 1px solid var(--border);
+      border-radius: 28px;
+      padding: 56px 48px;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+    .bot-wrapper::before {
+      content: '';
+      position: absolute;
+      top: -1px; left: 50%; transform: translateX(-50%);
+      width: 300px; height: 2px;
+      background: linear-gradient(90deg, transparent, var(--gold), transparent);
+    }
+    .bot-wrapper::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(ellipse at 50% 0%, rgba(201,168,76,0.06) 0%, transparent 60%);
+      pointer-events: none;
+    }
+
+    .bot-title {
+      font-family: 'Playfair Display', serif;
+      font-size: clamp(32px, 4vw, 52px);
+      font-weight: 700;
+      margin-bottom: 12px;
+      letter-spacing: -1.5px;
+    }
+    .bot-sub { font-size: 16px; color: var(--muted); margin-bottom: 40px; font-weight: 300; line-height: 1.6; }
+
+    .df-container {
+      display: flex;
+      justify-content: center;
+      margin-top: 20px;
+    }
+
+    /* ── FOOTER ── */
+    footer {
+      position: relative; z-index: 1;
+      border-top: 1px solid var(--border);
+      padding: 48px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: gap;
+      gap: 20px;
+    }
+
+    .footer-logo {
+      font-family: 'Playfair Display', serif;
+      font-size: 20px;
+      font-weight: 700;
+    }
+    .footer-logo span { color: var(--gold); }
+
+    .footer-links { display: flex; gap: 24px; }
+    .footer-links a { font-size: 13px; color: var(--muted); text-decoration: none; transition: color 0.2s; }
+    .footer-links a:hover { color: var(--gold); }
+
+    .footer-note { font-size: 12px; color: var(--muted); max-width: 300px; line-height: 1.6; }
+
+    /* ── DIVIDER ── */
+    .divider {
+      position: relative; z-index: 1;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, var(--border), transparent);
+      margin: 0 48px;
+    }
+
+    /* ── ANIMATIONS ── */
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(24px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .reveal {
+      opacity: 0;
+      transform: translateY(30px);
+      transition: opacity 0.7s ease, transform 0.7s ease;
+    }
+    .reveal.visible { opacity: 1; transform: translateY(0); }
+
+    /* ── SCROLLBAR ── */
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: var(--navy); }
+    ::-webkit-scrollbar-thumb { background: var(--navy3); border-radius: 3px; }
+    ::-webkit-scrollbar-thumb:hover { background: var(--gold); }
+
+    /* df-messenger lives on bot.html only */
+
+    /* ── RESPONSIVE ── */
+    @media (max-width: 900px) {
+      nav { padding: 16px 24px; }
+      .nav-links { display: none; }
+      .hero { flex-direction: column; padding: 100px 24px 60px; gap: 40px; }
+      .hero-right { flex: unset; width: 100%; }
+      .section { padding: 60px 24px; }
+      .scoring-inner { grid-template-columns: 1fr; gap: 40px; }
+      .features-grid { grid-template-columns: 1fr; }
+      .feat-card.wide { grid-column: span 1; }
+      .scoring-section { padding: 60px 24px; }
+      .bot-section { padding: 60px 24px; }
+      .bot-wrapper { padding: 28px 20px; }
+      footer { flex-direction: column; padding: 32px 24px; }
+      .hero-stats { gap: 24px; flex-wrap: wrap; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="bg-orbs">
+    <div class="orb orb-1"></div>
+    <div class="orb orb-2"></div>
+    <div class="orb orb-3"></div>
+  </div>
+
+  <!-- NAV -->
+  <nav>
+    <div class="nav-logo">Loan<span>IQ</span></div>
+    <div class="nav-links">
+      <a href="#how-it-works">How It Works</a>
+      <a href="#scoring">Scoring Model</a>
+      <a href="#features">Features</a>
+      <a href="bot.html" class="nav-cta">Try the Bot →</a>
+    </div>
+  </nav>
+
+  <!-- HERO -->
+  <section style="position:relative;z-index:1;">
+    <div class="hero">
+      <div class="hero-left">
+        <div class="hero-badge">
+          <div class="badge-dot"></div>
+          <span>AI-Powered · Live Bot · Free to Use</span>
+        </div>
+
+        <h1 class="hero-title">
+          Know Your Loan<br>
+          <span class="line2">Eligibility Score</span><br>
+          Instantly.
+        </h1>
+
+        <p class="hero-subtitle">
+          LoanIQ is an intelligent chatbot that evaluates your loan approval probability using a multi-factor weighted scoring model — inspired by real ML loan prediction research.
+        </p>
+
+        <div class="hero-actions">
+          <a href="bot.html" class="btn-primary">Check My Eligibility →</a>
+          <a href="#how-it-works" class="btn-ghost">See How It Works</a>
+        </div>
+
+        <div class="hero-stats">
+          <div class="stat-item">
+            <span class="stat-number">8</span>
+            <span class="stat-label">Scoring Factors</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-number">100%</span>
+            <span class="stat-label">Free to Use</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-number">&lt;2min</span>
+            <span class="stat-label">To Get Result</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="hero-right">
+        <div class="chat-card">
+          <div class="chat-header">
+            <div class="chat-avatar">🏦</div>
+            <div class="chat-header-info">
+              <div class="chat-header-name">LoanIQ Assistant</div>
+              <div class="chat-header-status">Online now</div>
+            </div>
+          </div>
+          <div class="chat-messages">
+            <div class="msg bot">
+              <div class="msg-icon">🏦</div>
+              <div class="msg-bubble">👋 Welcome to <strong>LoanIQ</strong>! I'll check your loan eligibility in a few steps. Shall we begin?</div>
+            </div>
+            <div class="msg user">
+              <div class="msg-bubble">Yes, let's start!</div>
+            </div>
+            <div class="msg bot">
+              <div class="msg-icon">🏦</div>
+              <div class="msg-bubble">Great! Step 1 of 10 — How old are you? (e.g. 28)</div>
+            </div>
+            <div class="msg user">
+              <div class="msg-bubble">28</div>
+            </div>
+            <div class="msg bot">
+              <div class="msg-icon">🏦</div>
+              <div class="msg-bubble">
+                <strong>Eligibility Result</strong>
+                <div class="result-card">
+                  <div class="result-score">78%</div>
+                  <div class="result-label">Eligibility Score</div>
+                  <div class="result-bar-bg"><div class="result-bar-fill"></div></div>
+                  <div class="result-verdict">✓ Good Approval Chances</div>
+                </div>
+              </div>
+            </div>
+            <div class="msg bot">
+              <div class="msg-icon">🏦</div>
+              <div class="msg-bubble" style="padding:8px 14px">
+                <div class="typing"><span></span><span></span><span></span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div class="divider"></div>
+
+  <!-- HOW IT WORKS -->
+  <section class="section reveal" id="how-it-works">
+    <span class="section-tag">// Process</span>
+    <h2 class="section-title">How LoanIQ Works</h2>
+    <p class="section-sub">A structured 10-step conversation that gathers your financial profile and runs it through our scoring engine in real time.</p>
+
+    <div class="steps-grid">
+      <div class="step-card">
+        <div class="step-number">01</div>
+        <span class="step-icon">🗓️</span>
+        <div class="step-title">Personal Details</div>
+        <div class="step-desc">Age and number of dependents help determine loan tenure eligibility and risk profile.</div>
+      </div>
+      <div class="step-card">
+        <div class="step-number">02</div>
+        <span class="step-icon">💰</span>
+        <div class="step-title">Income Assessment</div>
+        <div class="step-desc">Applicant and co-applicant income are combined to calculate your total repayment capacity.</div>
+      </div>
+      <div class="step-card">
+        <div class="step-number">03</div>
+        <span class="step-icon">💼</span>
+        <div class="step-title">Employment Type</div>
+        <div class="step-desc">Government, private, self-employed, or freelancer — employment stability directly affects the score.</div>
+      </div>
+      <div class="step-card">
+        <div class="step-number">04</div>
+        <span class="step-icon">📊</span>
+        <div class="step-title">Credit Score</div>
+        <div class="step-desc">The single most weighted factor at 30%. Scores from 300–900 are evaluated against lending benchmarks.</div>
+      </div>
+      <div class="step-card">
+        <div class="step-number">05</div>
+        <span class="step-icon">🏠</span>
+        <div class="step-title">Loan Details</div>
+        <div class="step-desc">Loan amount, purpose (home/education/vehicle/business), and property area complete the profile.</div>
+      </div>
+      <div class="step-card">
+        <div class="step-number">06</div>
+        <span class="step-icon">⚡</span>
+        <div class="step-title">Instant Result</div>
+        <div class="step-desc">The webhook engine calculates your DTI ratio, EMI estimate, eligibility score, and verdict instantly.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- SCORING SECTION -->
+  <section class="scoring-section" id="scoring">
+    <div class="scoring-inner">
+      <div class="reveal">
+        <span class="section-tag">// Scoring Engine</span>
+        <h2 class="section-title">What Drives Your Score</h2>
+        <p class="section-sub" style="margin-bottom:32px;">Eight weighted factors modelled after real-world bank lending criteria and ML loan prediction research.</p>
+
+        <div class="scoring-factors">
+          <div class="factor-row">
+            <div class="factor-icon">📊</div>
+            <div class="factor-info">
+              <div class="factor-name">Credit Score</div>
+              <div class="factor-desc">CIBIL / credit history</div>
+            </div>
+            <div class="factor-bar-wrap"><div class="factor-bar-bg"><div class="factor-bar-fill" style="width:30%"></div></div></div>
+            <div class="factor-weight">30%</div>
+          </div>
+          <div class="factor-row">
+            <div class="factor-icon">⚖️</div>
+            <div class="factor-info">
+              <div class="factor-name">Debt-to-Income Ratio</div>
+              <div class="factor-desc">Total EMI vs monthly income</div>
+            </div>
+            <div class="factor-bar-wrap"><div class="factor-bar-bg"><div class="factor-bar-fill" style="width:25%"></div></div></div>
+            <div class="factor-weight">25%</div>
+          </div>
+          <div class="factor-row">
+            <div class="factor-icon">💵</div>
+            <div class="factor-info">
+              <div class="factor-name">Income vs Loan Amount</div>
+              <div class="factor-desc">Loan-to-income multiple</div>
+            </div>
+            <div class="factor-bar-wrap"><div class="factor-bar-bg"><div class="factor-bar-fill" style="width:20%"></div></div></div>
+            <div class="factor-weight">20%</div>
+          </div>
+          <div class="factor-row">
+            <div class="factor-icon">💼</div>
+            <div class="factor-info">
+              <div class="factor-name">Employment Stability</div>
+              <div class="factor-desc">Job type and income security</div>
+            </div>
+            <div class="factor-bar-wrap"><div class="factor-bar-bg"><div class="factor-bar-fill" style="width:10%"></div></div></div>
+            <div class="factor-weight">10%</div>
+          </div>
+          <div class="factor-row">
+            <div class="factor-icon">🎯</div>
+            <div class="factor-info">
+              <div class="factor-name">Age + Purpose + Area</div>
+              <div class="factor-desc">Loan purpose risk, demographics</div>
+            </div>
+            <div class="factor-bar-wrap"><div class="factor-bar-bg"><div class="factor-bar-fill" style="width:15%"></div></div></div>
+            <div class="factor-weight">15%</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="reveal">
+        <span class="section-tag">// Verdict Thresholds</span>
+        <h2 class="section-title" style="font-size:32px;">Score → Decision</h2>
+        <p class="section-sub" style="margin-bottom:32px;font-size:14px;">How each score range translates to a lending verdict.</p>
+
+        <div class="verdict-table">
+          <div class="verdict-row v-green">
+            <div class="verdict-dot"></div>
+            <div class="verdict-range">80–100%</div>
+            <div class="verdict-label">Strong Approval Likely</div>
+          </div>
+          <div class="verdict-row v-yellow">
+            <div class="verdict-dot"></div>
+            <div class="verdict-range">65–79%</div>
+            <div class="verdict-label">Good Approval Chances</div>
+          </div>
+          <div class="verdict-row v-orange">
+            <div class="verdict-dot"></div>
+            <div class="verdict-range">50–64%</div>
+            <div class="verdict-label">Conditional Eligibility</div>
+          </div>
+          <div class="verdict-row v-red">
+            <div class="verdict-dot"></div>
+            <div class="verdict-range">35–49%</div>
+            <div class="verdict-label">Low Approval Probability</div>
+          </div>
+          <div class="verdict-row v-dark">
+            <div class="verdict-dot"></div>
+            <div class="verdict-range">0–34%</div>
+            <div class="verdict-label">High Rejection Risk</div>
+          </div>
+        </div>
+
+        <div style="margin-top:28px;padding:20px;background:rgba(201,168,76,0.06);border:1px solid var(--border);border-radius:12px;">
+          <div style="font-size:12px;color:var(--muted);line-height:1.6;">
+            <strong style="color:var(--gold2);display:block;margin-bottom:6px;">EMI Formula Used</strong>
+            EMI = P × r × (1+r)ⁿ / ((1+r)ⁿ - 1)<br>
+            Default: 9% annual rate · 20 year tenure
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FEATURES -->
+  <section class="section reveal" id="features">
+    <span class="section-tag">// Capabilities</span>
+    <h2 class="section-title">Built for Real Insights</h2>
+    <p class="section-sub">Not just a score — LoanIQ explains why and tells you how to improve.</p>
+
+    <div class="features-grid">
+      <div class="feat-card wide">
+        <div class="feat-icon">🧠</div>
+        <div class="feat-title">ML-Inspired Scoring Model</div>
+        <div class="feat-desc">Built on the same principles as the Loan Approval Prediction ML project — a weighted multi-factor model that mirrors how banks evaluate applicants. Factors like DTI ratio, credit score tiers, and income-to-loan multiples are benchmarked against real lending data. The bot doesn't just give you a number — it surfaces the exact factors dragging your score down.</div>
+      </div>
+      <div class="feat-card">
+        <div class="feat-icon">⚠️</div>
+        <div class="feat-title">Risk Warnings</div>
+        <div class="feat-desc">Flags specific concerns like high debt ratio, low credit score, or loan amount exceeding income limits — with targeted improvement tips.</div>
+      </div>
+      <div class="feat-card">
+        <div class="feat-icon">📐</div>
+        <div class="feat-title">Live EMI Calculator</div>
+        <div class="feat-desc">Calculates your estimated monthly EMI and debt-to-income ratio in real time using the standard amortisation formula.</div>
+      </div>
+      <div class="feat-card">
+        <div class="feat-icon">🔄</div>
+        <div class="feat-title">Re-check Anytime</div>
+        <div class="feat-desc">Type "Check Again" to restart with different values — useful for exploring how improving your credit score or reducing loan amount changes your result.</div>
+      </div>
+      <div class="feat-card">
+        <div class="feat-icon">🌐</div>
+        <div class="feat-title">Conversational Interface</div>
+        <div class="feat-desc">Powered by Google Dialogflow ES with quick-reply buttons, context-aware prompts, and graceful fallbacks for invalid inputs.</div>
+      </div>
+    </div>
+
+    <!-- TECH STACK -->
+    <div style="margin-top:64px;" class="reveal">
+      <span class="section-tag">// Tech Stack</span>
+      <h3 style="font-family:'Playfair Display',serif;font-size:28px;font-weight:700;letter-spacing:-0.5px;margin-bottom:8px;">Built With</h3>
+      <div class="tech-row">
+        <div class="tech-pill"><span class="dot" style="background:#4285F4"></span>Google Dialogflow ES</div>
+        <div class="tech-pill"><span class="dot" style="background:#3ECF8E"></span>Node.js + Express</div>
+        <div class="tech-pill"><span class="dot" style="background:#46E3B7"></span>Render (Webhook Host)</div>
+        <div class="tech-pill"><span class="dot" style="background:#F97316"></span>UptimeRobot (Always-On)</div>
+        <div class="tech-pill"><span class="dot" style="background:#c9a84c"></span>Weighted Scoring Engine</div>
+        <div class="tech-pill"><span class="dot" style="background:#a78bfa"></span>ML Loan Prediction Research</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA SECTION — links to bot.html -->
+  <section class="bot-section" id="try-bot">
+    <div class="bot-wrapper reveal">
+      <span class="section-tag" style="display:block;margin-bottom:12px;">// Live Demo</span>
+      <h2 class="bot-title">Ready to Check Your Eligibility?</h2>
+      <p class="bot-sub">Answer 10 quick questions and get your loan eligibility score instantly — free, no sign-up needed.</p>
+
+      <!-- Preview card + CTA grid -->
+      <div style="width:100%;max-width:720px;margin:0 auto 40px;display:grid;grid-template-columns:1fr 1fr;gap:24px;text-align:left;">
+        <!-- Sample chat preview -->
+        <div style="background:#111827;border:1px solid rgba(201,168,76,0.18);border-radius:20px;padding:24px;">
+          <div style="font-size:11px;color:#c9a84c;font-family:'DM Mono',monospace;letter-spacing:2px;margin-bottom:16px;">// SAMPLE RESULT</div>
+          <div style="display:flex;flex-direction:column;gap:10px;">
+            <div style="background:#1a2540;border-radius:12px 12px 12px 4px;padding:12px 14px;font-size:13px;color:#fff;line-height:1.5;">👋 Hi! I'll check your loan eligibility in 10 steps. Ready to begin?</div>
+            <div style="background:linear-gradient(135deg,#c9a84c,#b8913e);border-radius:12px 12px 4px 12px;padding:10px 14px;font-size:13px;color:#0a0f1e;font-weight:600;align-self:flex-end;">Yes, let's go!</div>
+            <div style="background:#1a2540;border-radius:12px;padding:14px 16px;font-size:13px;color:#fff;">
+              <div style="font-size:10px;color:#8b93a8;letter-spacing:1px;margin-bottom:8px;">ELIGIBILITY RESULT</div>
+              <div style="font-size:26px;font-weight:700;color:#c9a84c;font-family:'Playfair Display',serif;">78%</div>
+              <div style="height:6px;background:rgba(255,255,255,0.08);border-radius:3px;margin:8px 0;"><div style="width:78%;height:100%;background:linear-gradient(90deg,#c9a84c,#e8c97a);border-radius:3px;"></div></div>
+              <div style="font-size:12px;color:#22c55e;font-weight:500;">✓ Good Approval Chances</div>
+              <div style="font-size:11px;color:#8b93a8;margin-top:4px;">EMI: ₹22K · DTI: 31.4%</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Stats + launch button -->
+        <div style="display:flex;flex-direction:column;gap:14px;">
+          <div style="background:#111827;border:1px solid rgba(201,168,76,0.18);border-radius:14px;padding:18px 20px;">
+            <div style="font-size:26px;font-weight:700;color:#c9a84c;font-family:'Playfair Display',serif;">8</div>
+            <div style="font-size:11px;color:#8b93a8;margin-top:2px;text-transform:uppercase;letter-spacing:0.8px;">Scoring Factors</div>
+          </div>
+          <div style="background:#111827;border:1px solid rgba(201,168,76,0.18);border-radius:14px;padding:18px 20px;">
+            <div style="font-size:26px;font-weight:700;color:#c9a84c;font-family:'Playfair Display',serif;">&lt;2min</div>
+            <div style="font-size:11px;color:#8b93a8;margin-top:2px;text-transform:uppercase;letter-spacing:0.8px;">Instant Result</div>
+          </div>
+          <div style="background:#111827;border:1px solid rgba(201,168,76,0.18);border-radius:14px;padding:18px 20px;">
+            <div style="font-size:26px;font-weight:700;color:#22c55e;font-family:'Playfair Display',serif;">Free</div>
+            <div style="font-size:11px;color:#8b93a8;margin-top:2px;text-transform:uppercase;letter-spacing:0.8px;">No Sign-up</div>
+          </div>
+          <a href="bot.html" style="background:linear-gradient(135deg,#c9a84c,#e8c97a);color:#0a0f1e;text-decoration:none;padding:18px 24px;border-radius:14px;font-family:'DM Sans',sans-serif;font-size:16px;font-weight:700;box-shadow:0 8px 32px rgba(201,168,76,0.35);transition:transform 0.2s;display:block;text-align:center;"
+            onmouseover="this.style.transform='translateY(-2px)'"
+            onmouseout="this.style.transform=''">
+            🚀 Launch Bot →
+          </a>
+        </div>
+      </div>
+
+      <p style="font-size:12px;color:var(--muted);line-height:1.7;max-width:500px;margin:0 auto;">
+        ⚠️ <strong style="color:var(--gold2)">Disclaimer:</strong> LoanIQ is an educational tool. Results are estimates and do not constitute financial advice.
+      </p>
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+  <footer>
+    <div>
+      <div class="footer-logo">Loan<span>IQ</span></div>
+      <div style="font-size:12px;color:var(--muted);margin-top:6px;">AI Loan Eligibility Checker · Major Project</div>
+    </div>
+    <div class="footer-note">
+      Built with Google Dialogflow ES, Node.js, and a weighted ML-inspired scoring engine. Deployed on Render. Hosted on GitHub Pages.
+    </div>
+    <div class="footer-links">
+      <a href="#how-it-works">How It Works</a>
+      <a href="#scoring">Scoring</a>
+      <a href="bot.html">Try Bot</a>
+    </div>
+  </footer>
+
+  <!-- Scroll reveal -->
+  <script>
+    const reveals = document.querySelectorAll('.reveal');
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach((e, i) => {
+        if (e.isIntersecting) {
+          setTimeout(() => e.target.classList.add('visible'), i * 80);
+        }
+      });
+    }, { threshold: 0.12 });
+    reveals.forEach(el => observer.observe(el));
+  </script>
+
+</body>
+</html>
