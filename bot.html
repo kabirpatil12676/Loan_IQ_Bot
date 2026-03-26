@@ -186,7 +186,8 @@
    Frontend → Render Webhook → Dialogflow Fulfillment
 ══════════════════════════════════════════════════ */
 
-const WEBHOOK_URL = "https://loaniq-webhook.onrender.com/webhook";
+const API_BASE = "https://loaniq-webhook.onrender.com";
+const SESSION_ID = 'web-' + Math.random().toString(36).slice(2) + Date.now();
 
 let waiting = false;
 let stepNum = 1;
@@ -304,7 +305,7 @@ function setStep(n) {
   }
 }
 
-/* ══ WEBHOOK CALL ══ */
+/* ══ CHAT PROXY CALL ══ */
 async function sendMessage(override) {
   const text = (override ?? input.value).trim();
   if (!text || waiting) return;
@@ -316,34 +317,31 @@ async function sendMessage(override) {
   showTyping();
 
   try {
-    const response = await fetch(WEBHOOK_URL, {
+    const response = await fetch(API_BASE + '/chat', {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        queryResult: {
-          queryText: text,
-          parameters: {},
-          intent: { displayName: "loan.calculate.result" }
-        }
-      })
+      body: JSON.stringify({ text: text, sessionId: SESSION_ID })
     });
 
     const data = await response.json();
     hideTyping();
 
-    /* Extract response texts */
-    const texts =
-      data.fulfillmentMessages
-        ?.map(m => m.text?.text?.[0])
-        .filter(Boolean)
-      || [data.fulfillmentText || "I received your input. Let me process it."];
+    if (data.error) {
+      botMsg("⚠️ " + data.error, ["Try again"]);
+      setWait(false);
+      return;
+    }
+
+    const texts = data.texts || ['I received your input.'];
+    const chips = data.chips || [];
 
     texts.forEach((t, i) => {
       setTimeout(() => {
         const rd = parseResultFromText(t);
+        const lastChips = (i === texts.length - 1) ? chips : [];
         if (rd) setStep(10);
         else advanceStep(t);
-        botMsg(t, [], rd);
+        botMsg(t, lastChips, rd);
       }, i * 500);
     });
 
@@ -399,11 +397,35 @@ function fmt(s) {
 }
 
 /* ══ INIT ══ */
-window.addEventListener('load', () => {
-  botMsg(
-    "👋 Welcome to **LoanIQ**!\n\nI'll evaluate your loan eligibility in 10 quick steps using a multi-factor scoring engine.\n\nReady to begin?",
-    ["Yes, let's start!", "How does it work?"]
-  );
+window.addEventListener('load', async () => {
+  setWait(true);
+  showTyping();
+
+  try {
+    const response = await fetch(API_BASE + '/chat/welcome', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ sessionId: SESSION_ID })
+    });
+    const data = await response.json();
+    hideTyping();
+
+    if (data.texts && data.texts.length > 0) {
+      data.texts.forEach((t, i) => {
+        setTimeout(() => botMsg(t, (i === data.texts.length - 1) ? (data.chips || []) : []), i * 400);
+      });
+      setTimeout(() => setWait(false), data.texts.length * 400 + 100);
+    } else {
+      throw new Error('No welcome texts');
+    }
+  } catch (e) {
+    hideTyping();
+    setWait(false);
+    botMsg(
+      "👋 Welcome to **LoanIQ**!\n\nI'll evaluate your loan eligibility in 10 quick steps using a multi-factor scoring engine.\n\nReady to begin?",
+      ["Yes, let's start!", "How does it work?"]
+    );
+  }
 });
 </script>
 </body>
