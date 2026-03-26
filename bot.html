@@ -8,9 +8,6 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 
-  <!-- Dialogflow Messenger -->
-  <script src="https://www.gstatic.com/dialogflow-console/fast/messenger/bootstrap.js?v=1"></script>
-
   <style>
     *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
     :root{
@@ -68,74 +65,64 @@
     .sb-card-val{font-size:12px;font-weight:600;color:var(--white)}
 
     /* CHAT AREA */
-    .chat-area{
-      display:flex;
-      flex-direction:column;
-      overflow:hidden;
-      position:relative;
-      background:var(--navy);
-    }
+    .chat-area{display:flex;flex-direction:column;overflow:hidden;position:relative;background:var(--navy)}
 
-    /* ═══════════════════════════════════
-       df-messenger — RESTYLED as direct chat
-       Hide widget chrome, fill chat area
-    ═══════════════════════════════════ */
-    df-messenger {
-      /* Dark theme matching our page */
-      --df-messenger-bot-message: #1a2540;
-      --df-messenger-button-titlebar-color: #0a0f1e;
-      --df-messenger-chat-background-color: #0a0f1e;
-      --df-messenger-font-color: #ffffff;
-      --df-messenger-send-icon: #c9a84c;
-      --df-messenger-user-message: #c9a84c;
-      --df-messenger-input-box-color: #111827;
-      --df-messenger-input-font-color: #ffffff;
-      --df-messenger-input-placeholder-font-color: #8b93a8;
-      --df-messenger-titlebar-font-color: #0a0f1e;
-      --df-messenger-titlebar-icon: none;
+    /* MESSAGES */
+    .messages{flex:1;overflow-y:auto;padding:28px 0;scroll-behavior:smooth}
+    .messages::-webkit-scrollbar{width:5px}
+    .messages::-webkit-scrollbar-thumb{background:var(--navy3);border-radius:3px}
 
-      /* Fill the entire chat area */
-      position: absolute !important;
-      inset: 0 !important;
-      width: 100% !important;
-      height: 100% !important;
-      z-index: 10;
-    }
+    .msg-row{display:flex;gap:12px;max-width:760px;margin:0 auto 20px;padding:0 32px;animation:fadeUp .35s ease both}
+    @keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+    .msg-row.user{flex-direction:row-reverse}
 
-    /* Make chat panel fill the entire area, no floating bubble */
-    df-messenger::part(chat) {
-      position: absolute !important;
-      inset: 0 !important;
-      width: 100% !important;
-      height: 100% !important;
-      max-height: 100% !important;
-      border: none !important;
-      border-radius: 0 !important;
-      box-shadow: none !important;
-    }
+    .avatar{width:36px;height:36px;border-radius:10px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:17px}
+    .avatar.bot{background:linear-gradient(135deg,var(--gold),var(--gold2))}
+    .avatar.user{background:linear-gradient(135deg,#3b82f6,#6366f1)}
 
-    /* Hide the floating bubble icon */
-    df-messenger::part(widgetIcon) {
-      display: none !important;
-    }
+    .bubble{max-width:76%;padding:14px 18px;border-radius:18px;font-size:14px;line-height:1.65}
+    .bubble.bot{background:var(--navy3);border:1px solid var(--border);border-top-left-radius:4px;color:var(--white)}
+    .bubble.user{background:linear-gradient(135deg,var(--gold),#b8913e);color:var(--navy);font-weight:600;border-top-right-radius:4px}
 
-    /* Powered-by footer */
-    .chat-footer{
-      position:absolute;
-      bottom:0;
-      left:0;
-      right:0;
-      padding:6px 16px;
-      text-align:center;
-      font-size:10px;
-      color:rgba(139,147,168,0.5);
-      z-index:11;
-      pointer-events:none;
-    }
+    /* Chips */
+    .chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+    .chip{padding:8px 16px;border-radius:100px;border:1px solid var(--border);background:rgba(201,168,76,.06);font-size:13px;color:var(--gold2);cursor:pointer;transition:background .2s,border-color .2s,transform .15s;font-family:'DM Sans',sans-serif}
+    .chip:hover{background:rgba(201,168,76,.15);border-color:var(--gold);transform:translateY(-1px)}
+
+    /* Result card */
+    .result-card{background:linear-gradient(135deg,rgba(201,168,76,.12),rgba(201,168,76,.04));border:1px solid var(--border);border-radius:14px;padding:18px;margin-top:12px}
+    .res-score{font-family:'Playfair Display',serif;font-size:42px;font-weight:900;color:var(--gold);line-height:1}
+    .res-label{font-size:12px;color:var(--muted);margin-top:3px}
+    .res-bar-bg{height:8px;background:rgba(255,255,255,.08);border-radius:4px;margin:12px 0 6px}
+    .res-bar{height:100%;border-radius:4px;background:linear-gradient(90deg,var(--gold),var(--gold2));transition:width 1.2s cubic-bezier(.25,.46,.45,.94);width:0%}
+    .res-verdict{font-size:14px;font-weight:700;margin:8px 0 4px}
+    .res-meta{display:flex;gap:20px;flex-wrap:wrap;margin-top:10px;padding-top:10px;border-top:1px solid var(--border)}
+    .res-meta-item{font-size:12px;color:var(--muted)}
+    .res-meta-item strong{display:block;color:var(--white);font-size:14px;font-weight:600;margin-bottom:2px}
+
+    /* Typing */
+    .typing-row{display:flex;gap:12px;max-width:760px;margin:0 auto 16px;padding:0 32px;animation:fadeUp .3s ease both}
+    .typing-bubble{background:var(--navy3);border:1px solid var(--border);border-radius:18px;border-top-left-radius:4px;padding:14px 18px;display:flex;gap:5px;align-items:center}
+    .tdot{width:8px;height:8px;background:var(--muted);border-radius:50%;animation:tdot 1.3s ease-in-out infinite}
+    .tdot:nth-child(2){animation-delay:.2s}.tdot:nth-child(3){animation-delay:.4s}
+    @keyframes tdot{0%,80%,100%{opacity:.2;transform:scale(.8)}40%{opacity:1;transform:scale(1)}}
+
+    /* Input bar */
+    .input-bar{padding:14px 32px 18px;background:rgba(10,15,30,.95);border-top:1px solid var(--border)}
+    .input-wrap{max-width:760px;margin:0 auto;display:flex;align-items:flex-end;gap:10px;background:var(--navy2);border:1px solid var(--border);border-radius:14px;padding:10px 12px 10px 18px;transition:border-color .2s,box-shadow .2s}
+    .input-wrap:focus-within{border-color:rgba(201,168,76,.5);box-shadow:0 0 0 3px rgba(201,168,76,.08)}
+    #userInput{flex:1;background:transparent;border:none;outline:none;font-family:'DM Sans',sans-serif;font-size:15px;color:var(--white);resize:none;line-height:1.5;max-height:120px;padding:2px 0}
+    #userInput::placeholder{color:var(--muted)}
+    .send-btn{width:40px;height:40px;border-radius:10px;border:none;flex-shrink:0;background:linear-gradient(135deg,var(--gold),var(--gold2));color:var(--navy);font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:transform .15s,box-shadow .15s}
+    .send-btn:hover:not(:disabled){transform:scale(1.05);box-shadow:0 4px 16px rgba(201,168,76,.4)}
+    .send-btn:disabled{opacity:.35;cursor:not-allowed}
+    .input-hint{max-width:760px;margin:7px auto 0;font-size:11px;color:var(--muted);text-align:center}
 
     @media(max-width:680px){
       .sidebar{display:none}
       .layout{grid-template-columns:1fr}
+      .msg-row,.typing-row{padding:0 14px}
+      .input-bar{padding:10px 14px 14px}
       nav{padding:0 16px}
     }
   </style>
@@ -178,23 +165,111 @@
     </div>
   </aside>
 
-  <!-- CHAT AREA — df-messenger restyled as direct chat -->
+  <!-- CHAT AREA -->
   <main class="chat-area">
-    <df-messenger
-      intent="WELCOME"
-      chat-title=""
-      agent-id="1118237b-3b5d-47e1-b0cc-c4036588d0a3"
-      language-code="en"
-      expand="true"
-    ></df-messenger>
-    <div class="chat-footer">
-      Powered by Google Dialogflow · Enter to send
+    <div class="messages" id="messages"></div>
+    <div class="input-bar">
+      <div class="input-wrap">
+        <textarea id="userInput" rows="1" placeholder="Type your answer and press Enter…"></textarea>
+        <button class="send-btn" id="sendBtn" onclick="sendMessage()" title="Send">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
+        </button>
+      </div>
+      <div class="input-hint">Enter to send · Shift+Enter for new line · Powered by Google Dialogflow</div>
     </div>
   </main>
 </div>
 
 <script>
-/* ══ SIDEBAR STEP TRACKER ══ */
+/* ══════════════════════════════════════════════════
+   LOANIQ — Custom ChatGPT-Style Chat Engine
+   Frontend → Render Webhook → Dialogflow Fulfillment
+══════════════════════════════════════════════════ */
+
+const WEBHOOK_URL = "https://loaniq-webhook.onrender.com/webhook";
+
+let waiting = false;
+let stepNum = 1;
+
+const box   = document.getElementById('messages');
+const input = document.getElementById('userInput');
+const btn   = document.getElementById('sendBtn');
+
+/* ── Auto-resize textarea ── */
+input.addEventListener('input', () => {
+  input.style.height = 'auto';
+  input.style.height = Math.min(input.scrollHeight, 120) + 'px';
+});
+input.addEventListener('keydown', e => {
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
+});
+
+/* ══ RENDER UI ══ */
+function botMsg(text, chips = [], resultData = null) {
+  const row = document.createElement('div');
+  row.className = 'msg-row bot';
+
+  let inner = `<div class="bubble bot">${fmt(text)}`;
+
+  if (resultData) {
+    const c = scoreColor(resultData.pct);
+    const uid = 'bar' + Date.now();
+    inner += `
+      <div class="result-card">
+        <div class="res-score">${resultData.pct}%</div>
+        <div class="res-label">Eligibility Score</div>
+        <div class="res-bar-bg"><div class="res-bar" id="${uid}"></div></div>
+        <div class="res-verdict" style="color:${c}">${resultData.verdict}</div>
+        <div class="res-meta">
+          <div class="res-meta-item"><strong>${resultData.emi}</strong>Est. EMI</div>
+          <div class="res-meta-item"><strong>${resultData.dti}</strong>DTI Ratio</div>
+          <div class="res-meta-item"><strong>${resultData.income}</strong>Total Income</div>
+        </div>
+      </div>`;
+    setTimeout(() => {
+      const b = document.getElementById(uid);
+      if (b) b.style.width = resultData.pct + '%';
+    }, 150);
+  }
+
+  inner += '</div>';
+
+  if (chips.length) {
+    inner += `<div class="chips">${chips.map(c =>
+      `<button class="chip" onclick="chipClick('${esc(c)}')">${esc(c)}</button>`
+    ).join('')}</div>`;
+  }
+
+  row.innerHTML = `<div class="avatar bot">🏦</div><div>${inner}</div>`;
+  box.appendChild(row);
+  scrollDown();
+}
+
+function userMsg(text) {
+  const row = document.createElement('div');
+  row.className = 'msg-row user';
+  row.innerHTML = `<div class="avatar user">👤</div><div class="bubble user">${esc(text)}</div>`;
+  box.appendChild(row);
+  scrollDown();
+}
+
+function showTyping() {
+  const t = document.createElement('div');
+  t.className = 'typing-row'; t.id = 'typ';
+  t.innerHTML = `<div class="avatar bot">🏦</div><div class="typing-bubble"><div class="tdot"></div><div class="tdot"></div><div class="tdot"></div></div>`;
+  box.appendChild(t); scrollDown();
+}
+
+function hideTyping() {
+  const t = document.getElementById('typ');
+  if (t) t.remove();
+}
+
+function scrollDown() {
+  setTimeout(() => box.scrollTop = box.scrollHeight, 60);
+}
+
+/* ══ STEP TRACKER ══ */
 const STEP_SIGNALS = [
   ['age','how old','years old'],
   ['income','salary','monthly','take-home','earn'],
@@ -208,7 +283,15 @@ const STEP_SIGNALS = [
   ['result','eligib','score','approval','verdict']
 ];
 
-let stepNum = 1;
+function advanceStep(text) {
+  const lo = text.toLowerCase();
+  for (let i = STEP_SIGNALS.length - 1; i >= 0; i--) {
+    if (STEP_SIGNALS[i].some(k => lo.includes(k))) {
+      const n = i + 1;
+      if (n >= stepNum) { setStep(n); return; }
+    }
+  }
+}
 
 function setStep(n) {
   stepNum = Math.min(Math.max(n, 1), 10);
@@ -221,26 +304,106 @@ function setStep(n) {
   }
 }
 
-function advanceStep(text) {
-  const lo = text.toLowerCase();
-  for (let i = STEP_SIGNALS.length - 1; i >= 0; i--) {
-    if (STEP_SIGNALS[i].some(k => lo.includes(k))) {
-      const n = i + 1;
-      if (n >= stepNum) { setStep(n); return; }
-    }
+/* ══ WEBHOOK CALL ══ */
+async function sendMessage(override) {
+  const text = (override ?? input.value).trim();
+  if (!text || waiting) return;
+
+  input.value = '';
+  input.style.height = 'auto';
+  userMsg(text);
+  setWait(true);
+  showTyping();
+
+  try {
+    const response = await fetch(WEBHOOK_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        queryResult: {
+          queryText: text,
+          parameters: {},
+          intent: { displayName: "loan.calculate.result" }
+        }
+      })
+    });
+
+    const data = await response.json();
+    hideTyping();
+
+    /* Extract response texts */
+    const texts =
+      data.fulfillmentMessages
+        ?.map(m => m.text?.text?.[0])
+        .filter(Boolean)
+      || [data.fulfillmentText || "I received your input. Let me process it."];
+
+    texts.forEach((t, i) => {
+      setTimeout(() => {
+        const rd = parseResultFromText(t);
+        if (rd) setStep(10);
+        else advanceStep(t);
+        botMsg(t, [], rd);
+      }, i * 500);
+    });
+
+    setTimeout(() => setWait(false), texts.length * 500 + 100);
+
+  } catch (err) {
+    hideTyping();
+    setWait(false);
+    console.error(err);
+    botMsg("⚠️ Connection issue. The server may be waking up — please try again in a few seconds.", ["Try again"]);
   }
 }
 
-/* Listen for responses to update sidebar */
-document.addEventListener('df-response-received', function(event) {
-  try {
-    const msgs = event.detail?.response?.queryResult?.fulfillmentMessages || [];
-    msgs.forEach(m => {
-      if (m.text && m.text.text) {
-        m.text.text.forEach(t => advanceStep(t));
-      }
-    });
-  } catch(e) {}
+/* ══ RESULT PARSER ══ */
+function parseResultFromText(t) {
+  const pctM = t.match(/Score:\s*(\d+)%/);
+  if (!pctM) return null;
+  const pct = parseInt(pctM[1]);
+  const lines = t.split('\n').map(s => s.trim()).filter(Boolean);
+  const verdict = lines[0] || '';
+  const emi = (t.match(/EMI:\s*([^\n]+)/) || [])[1]?.trim() || '—';
+  const dti = (t.match(/DTI:\s*([^\n%]+%)/) || [])[1]?.trim() || '—';
+  const income = (t.match(/Income:\s*([^\n]+)/) || [])[1]?.trim() || '—';
+  return { pct, verdict, emi, dti, income };
+}
+
+/* ══ HELPERS ══ */
+function chipClick(t) { sendMessage(t); }
+
+function setWait(v) {
+  waiting = v; btn.disabled = v; input.disabled = v;
+  if (!v) setTimeout(() => input.focus(), 100);
+}
+
+function scoreColor(p) {
+  if (p >= 80) return '#22c55e';
+  if (p >= 65) return '#84cc16';
+  if (p >= 50) return '#f59e0b';
+  if (p >= 35) return '#f97316';
+  return '#ef4444';
+}
+
+function esc(s) {
+  return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
+function fmt(s) {
+  return esc(s)
+    .replace(/\n/g, '<br>')
+    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+    .replace(/(█+)/g, '<span style="color:var(--gold);letter-spacing:-1px;font-family:monospace">$1</span>')
+    .replace(/(░+)/g, '<span style="color:var(--navy3);letter-spacing:-1px;font-family:monospace">$1</span>');
+}
+
+/* ══ INIT ══ */
+window.addEventListener('load', () => {
+  botMsg(
+    "👋 Welcome to **LoanIQ**!\n\nI'll evaluate your loan eligibility in 10 quick steps using a multi-factor scoring engine.\n\nReady to begin?",
+    ["Yes, let's start!", "How does it work?"]
+  );
 });
 </script>
 </body>
