@@ -411,8 +411,9 @@ window.addEventListener('load', async () => {
     hideTyping();
 
     if (data.texts && data.texts.length > 0) {
+      const wChips = (data.chips || []).filter(c => c.toLowerCase() !== 'help');
       data.texts.forEach((t, i) => {
-        setTimeout(() => botMsg(t, (i === data.texts.length - 1) ? (data.chips || []) : []), i * 400);
+        setTimeout(() => botMsg(t, (i === data.texts.length - 1) ? wChips : []), i * 400);
       });
       setTimeout(() => setWait(false), data.texts.length * 400 + 100);
     } else {
