@@ -8,6 +8,9 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 
+  <!-- Dialogflow Messenger -->
+  <script src="https://www.gstatic.com/dialogflow-console/fast/messenger/bootstrap.js?v=1"></script>
+
   <style>
     *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
     :root{
@@ -73,46 +76,67 @@
       background:var(--navy);
     }
 
-    /* Chat iframe container */
-    .chat-frame-wrap{
-      flex:1;
-      position:relative;
-      display:flex;
-      align-items:stretch;
-      padding:16px 16px 16px 0;
+    /* ═══════════════════════════════════
+       df-messenger — RESTYLED as direct chat
+       Hide widget chrome, fill chat area
+    ═══════════════════════════════════ */
+    df-messenger {
+      /* Dark theme matching our page */
+      --df-messenger-bot-message: #1a2540;
+      --df-messenger-button-titlebar-color: #0a0f1e;
+      --df-messenger-chat-background-color: #0a0f1e;
+      --df-messenger-font-color: #ffffff;
+      --df-messenger-send-icon: #c9a84c;
+      --df-messenger-user-message: #c9a84c;
+      --df-messenger-input-box-color: #111827;
+      --df-messenger-input-font-color: #ffffff;
+      --df-messenger-input-placeholder-font-color: #8b93a8;
+      --df-messenger-titlebar-font-color: #0a0f1e;
+      --df-messenger-titlebar-icon: none;
+
+      /* Fill the entire chat area */
+      position: absolute !important;
+      inset: 0 !important;
+      width: 100% !important;
+      height: 100% !important;
+      z-index: 10;
     }
 
-    .chat-frame-inner{
-      flex:1;
-      border-radius:16px;
-      overflow:hidden;
-      border:1px solid var(--border);
-      box-shadow:0 8px 32px rgba(0,0,0,0.3);
-      background:#fff;
-      position:relative;
+    /* Make chat panel fill the entire area, no floating bubble */
+    df-messenger::part(chat) {
+      position: absolute !important;
+      inset: 0 !important;
+      width: 100% !important;
+      height: 100% !important;
+      max-height: 100% !important;
+      border: none !important;
+      border-radius: 0 !important;
+      box-shadow: none !important;
     }
 
-    .chat-frame-inner iframe{
-      width:100%;
-      height:100%;
-      border:none;
-      display:block;
+    /* Hide the floating bubble icon */
+    df-messenger::part(widgetIcon) {
+      display: none !important;
     }
 
     /* Powered-by footer */
     .chat-footer{
-      padding:10px 16px 14px 0;
+      position:absolute;
+      bottom:0;
+      left:0;
+      right:0;
+      padding:6px 16px;
       text-align:center;
-      font-size:11px;
-      color:var(--muted);
+      font-size:10px;
+      color:rgba(139,147,168,0.5);
+      z-index:11;
+      pointer-events:none;
     }
 
     @media(max-width:680px){
       .sidebar{display:none}
       .layout{grid-template-columns:1fr}
       nav{padding:0 16px}
-      .chat-frame-wrap{padding:12px}
-      .chat-footer{padding:8px 12px 12px}
     }
   </style>
 </head>
@@ -154,21 +178,70 @@
     </div>
   </aside>
 
-  <!-- CHAT AREA — Web Demo iframe -->
+  <!-- CHAT AREA — df-messenger restyled as direct chat -->
   <main class="chat-area">
-    <div class="chat-frame-wrap">
-      <div class="chat-frame-inner">
-        <iframe
-          allow="microphone;"
-          src="https://console.dialogflow.com/api-client/demo/embedded/1118237b-3b5d-47e1-b0cc-c4036588d0a3">
-        </iframe>
-      </div>
-    </div>
+    <df-messenger
+      intent="WELCOME"
+      chat-title=""
+      agent-id="1118237b-3b5d-47e1-b0cc-c4036588d0a3"
+      language-code="en"
+      expand="true"
+    ></df-messenger>
     <div class="chat-footer">
-      Powered by Google Dialogflow &nbsp;·&nbsp; Enter to send &nbsp;·&nbsp; 100% Free
+      Powered by Google Dialogflow · Enter to send
     </div>
   </main>
 </div>
 
+<script>
+/* ══ SIDEBAR STEP TRACKER ══ */
+const STEP_SIGNALS = [
+  ['age','how old','years old'],
+  ['income','salary','monthly','take-home','earn'],
+  ['employ','job','work','salaried','self-employ','freelanc','unemploy'],
+  ['credit','cibil'],
+  ['loan amount','how much','need','borrow','require'],
+  ['emi','existing','current obligation','monthly obligation'],
+  ['purpose','home purchase','education','vehicle','business','personal'],
+  ['dependent','children','family member'],
+  ['area','urban','rural','semiurban','semi-urban'],
+  ['result','eligib','score','approval','verdict']
+];
+
+let stepNum = 1;
+
+function setStep(n) {
+  stepNum = Math.min(Math.max(n, 1), 10);
+  for (let i = 1; i <= 10; i++) {
+    const el = document.getElementById('s' + i);
+    if (!el) continue;
+    el.classList.remove('active', 'done');
+    if (i < stepNum) el.classList.add('done');
+    else if (i === stepNum) el.classList.add('active');
+  }
+}
+
+function advanceStep(text) {
+  const lo = text.toLowerCase();
+  for (let i = STEP_SIGNALS.length - 1; i >= 0; i--) {
+    if (STEP_SIGNALS[i].some(k => lo.includes(k))) {
+      const n = i + 1;
+      if (n >= stepNum) { setStep(n); return; }
+    }
+  }
+}
+
+/* Listen for responses to update sidebar */
+document.addEventListener('df-response-received', function(event) {
+  try {
+    const msgs = event.detail?.response?.queryResult?.fulfillmentMessages || [];
+    msgs.forEach(m => {
+      if (m.text && m.text.text) {
+        m.text.text.forEach(t => advanceStep(t));
+      }
+    });
+  } catch(e) {}
+});
+</script>
 </body>
 </html>
