@@ -333,7 +333,7 @@ async function sendMessage(override) {
     }
 
     const texts = data.texts || ['I received your input.'];
-    const chips = data.chips || [];
+    const chips = (data.chips || []).filter(c => c.toLowerCase() !== 'help');
 
     texts.forEach((t, i) => {
       setTimeout(() => {
